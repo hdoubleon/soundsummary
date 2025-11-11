@@ -1,0 +1,571 @@
+/* 녹음 모달 */
+.recording-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.2s ease;
+}
+
+.recording-modal.active,
+.recording-modal.show {
+    display: flex;
+}
+
+.modal-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.modal-content {
+    background: var(--bg-primary);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-lg);
+    max-width: 600px;
+    width: 90%;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    animation: slideUp 0.3s ease;
+    position: relative;
+    z-index: 1;
+}
+
+.modal-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.modal-header-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.modal-body {
+    padding: 24px;
+    overflow-y: auto;
+}
+
+/* 녹음 컨트롤 */
+.recording-section {
+    margin-bottom: 24px;
+}
+
+.recording-controls-initial {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+.record-btn {
+    width: 80px;
+    height: 80px;
+    border: none;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--danger-color), #DC2626);
+    color: white;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    transition: var(--transition);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.record-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
+}
+
+.record-btn.recording {
+    animation: pulse 2s infinite;
+}
+
+.record-btn i {
+    font-size: 24px;
+}
+
+.record-btn span {
+    font-size: 12px;
+}
+
+.recording-status {
+    text-align: center;
+}
+
+.status-indicator {
+    width: 12px;
+    height: 12px;
+    background: var(--success-color);
+    border-radius: 50%;
+    margin: 0 auto 8px;
+    animation: pulse 2s infinite;
+}
+
+.status-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+}
+
+.status-text {
+    font-size: 14px;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.recording-timer {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--primary-color);
+    font-family: monospace;
+}
+
+/* 녹음 완료 후 버튼 */
+.recording-controls-completed {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.button-group {
+    display: flex;
+    gap: 12px;
+}
+
+.continue-btn,
+.restart-btn {
+    flex: 1;
+    padding: 12px 20px;
+    border: none;
+    border-radius: var(--border-radius-sm);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: var(--transition);
+}
+
+.continue-btn {
+    background: var(--success-color);
+    color: white;
+}
+
+.continue-btn:hover {
+    background: #059669;
+}
+
+.restart-btn {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+}
+
+.restart-btn:hover {
+    background: var(--border-color);
+}
+
+.recording-info {
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius-sm);
+    padding: 16px;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    margin: 8px 0;
+}
+
+.info-label {
+    color: var(--text-secondary);
+}
+
+.info-value {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.info-value.completed {
+    color: var(--success-color);
+}
+
+.info-value.time {
+    font-family: monospace;
+}
+
+/* 파일 업로드 */
+.upload-controls {
+    margin-bottom: 24px;
+}
+
+.upload-drop-zone {
+    border: 2px dashed var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 48px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: var(--transition);
+    background: var(--bg-secondary);
+}
+
+.upload-drop-zone:hover,
+.upload-drop-zone.dragover {
+    border-color: var(--primary-color);
+    background: var(--primary-light);
+}
+
+.upload-drop-zone i {
+    font-size: 48px;
+    color: var(--primary-color);
+    margin-bottom: 16px;
+}
+
+.upload-drop-zone p {
+    color: var(--text-secondary);
+    margin: 8px 0;
+    font-size: 14px;
+}
+
+.upload-hint {
+    font-size: 13px;
+    color: var(--text-tertiary);
+}
+
+.upload-formats {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin-top: 8px;
+}
+
+.upload-preview {
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.upload-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+}
+
+.file-icon {
+    width: 40px;
+    height: 40px;
+    background: var(--primary-light);
+    border-radius: var(--border-radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary-color);
+    font-size: 18px;
+}
+
+.file-meta {
+    flex: 1;
+}
+
+.file-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.file-size {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.remove-btn {
+    padding: 6px 12px;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 12px;
+    transition: var(--transition);
+}
+
+.remove-btn:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--danger-color);
+    color: var(--danger-color);
+}
+
+/* 폴더 선택 */
+.folder-selection-section {
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    padding: 20px;
+    margin: 24px 0;
+}
+
+.folder-selection-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.folder-input-group {
+    margin-bottom: 16px;
+}
+
+.folder-input-group label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.folder-input-row {
+    display: flex;
+    gap: 8px;
+}
+
+.folder-input-row select,
+.folder-input-group input {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    font-size: 14px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    transition: var(--transition);
+}
+
+.folder-input-row select:focus,
+.folder-input-group input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.folder-input-group input:disabled {
+    background: var(--bg-tertiary);
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.folder-selection-hint {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px;
+    background: var(--bg-tertiary);
+    border-radius: var(--border-radius-sm);
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.folder-selection-hint strong {
+    color: var(--primary-color);
+    font-family: monospace;
+}
+
+/* 모달 액션 */
+.modal-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 24px;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--primary-color);
+}
+
+.checkbox-custom {
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--border-color);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+}
+
+.checkbox-label input[type="checkbox"]:checked + .checkbox-custom {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.action-buttons {
+    display: flex;
+    gap: 12px;
+}
+
+/* 컨텍스트 메뉴 */
+.context-menu {
+    position: fixed;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    box-shadow: var(--shadow-lg);
+    min-width: 200px;
+    z-index: 1000;
+    padding: 6px;
+}
+
+.context-menu-item {
+    padding: 10px 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    color: var(--text-primary);
+    border-radius: 6px;
+    transition: var(--transition);
+}
+
+.context-menu-item:hover {
+    background: var(--bg-tertiary);
+}
+
+.context-menu-divider {
+    height: 1px;
+    background: var(--border-color);
+    margin: 4px 0;
+}
+
+.context-menu-item.danger:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--danger-color);
+}
+
+.context-menu-item i {
+    width: 16px;
+    text-align: center;
+}
+
+/* 녹음 미니바 */
+.recording-minibar {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--bg-primary);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-lg);
+    padding: 16px 20px;
+    cursor: pointer;
+    transition: var(--transition);
+    z-index: 900;
+}
+
+.recording-minibar:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+.minibar-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.minibar-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, var(--danger-color), #DC2626);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.minibar-icon.pulse {
+    animation: pulse 2s infinite;
+}
+
+.minibar-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.minibar-status {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.minibar-timer {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--primary-color);
+    font-family: monospace;
+}
+
+.minibar-restore {
+    margin-left: 12px;
+    padding: 6px;
+    background: var(--bg-tertiary);
+    border: none;
+    border-radius: 6px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.minibar-restore:hover {
+    background: var(--border-color);
+}

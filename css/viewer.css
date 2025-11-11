@@ -1,0 +1,344 @@
+/* 요약 뷰어 */
+.summary-viewer {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.summary-header {
+    background: var(--bg-primary);
+    border-bottom: 1px solid var(--border-color);
+    padding: 20px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.summary-meta h1 {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 12px 0;
+}
+
+.summary-info {
+    display: flex;
+    gap: 16px;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.summary-type {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.summary-type i {
+    color: var(--primary-color);
+}
+
+.summary-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.action-btn {
+    width: 36px;
+    height: 36px;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+}
+
+.action-btn:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+/* 결과 섹션 */
+.result {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.result-row {
+    display: flex;
+    gap: 8px;
+    padding: 16px 24px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.result-row .btn {
+    flex: 1;
+    padding: 10px 16px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.result-row .btn:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.result-row .btn.active {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+}
+
+.resultbox {
+    flex: 1;
+    padding: 24px;
+    overflow-y: auto;
+    line-height: 1.8;
+}
+
+/* 마크다운 스타일 */
+.resultbox h1,
+.resultbox h2,
+.resultbox h3 {
+    color: var(--text-primary);
+    margin: 24px 0 16px 0;
+    font-weight: 600;
+}
+
+.resultbox h1 {
+    font-size: 28px;
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 12px;
+}
+
+.resultbox h2 {
+    font-size: 22px;
+    color: var(--primary-color);
+}
+
+.resultbox h3 {
+    font-size: 18px;
+}
+
+.resultbox p {
+    margin: 12px 0;
+    color: var(--text-secondary);
+}
+
+.resultbox ul,
+.resultbox ol {
+    margin: 12px 0;
+    padding-left: 24px;
+}
+
+.resultbox li {
+    margin: 8px 0;
+    color: var(--text-secondary);
+}
+
+.resultbox strong {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.resultbox em {
+    font-style: italic;
+    color: var(--text-primary);
+}
+
+.resultbox code {
+    background: var(--bg-tertiary);
+    color: var(--primary-color);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 13px;
+}
+
+.resultbox pre {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    padding: 16px;
+    overflow-x: auto;
+    margin: 16px 0;
+}
+
+.resultbox pre code {
+    background: none;
+    padding: 0;
+    color: var(--text-primary);
+}
+
+.resultbox blockquote {
+    border-left: 4px solid var(--primary-color);
+    margin: 16px 0;
+    padding: 12px 20px;
+    background: var(--primary-light);
+    color: var(--text-secondary);
+}
+
+.resultbox a {
+    color: var(--primary-color);
+    text-decoration: none;
+    transition: var(--transition);
+}
+
+.resultbox a:hover {
+    text-decoration: underline;
+}
+
+/* 화자 구분 스타일 */
+.speaker-entry {
+    margin: 16px 0;
+    padding: 16px;
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius-sm);
+    border-left: 4px solid var(--primary-color);
+}
+
+.speaker-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.speaker-name {
+    font-weight: 600;
+    color: var(--primary-color);
+    font-size: 14px;
+}
+
+.timestamp {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    font-family: 'Courier New', monospace;
+}
+
+.speaker-text {
+    color: var(--text-primary);
+    line-height: 1.8;
+    font-size: 14px;
+}
+
+/* 오디오 플레이어 */
+.audio-player {
+    padding: 20px;
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius-sm);
+    margin: 16px 0;
+}
+
+.audio-player audio {
+    width: 100%;
+    margin-bottom: 12px;
+}
+
+.audio-meta {
+    display: flex;
+    gap: 16px;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.audio-meta i {
+    color: var(--primary-color);
+}
+
+.audio-download {
+    margin-left: auto;
+    padding: 6px 12px;
+    background: var(--primary-color);
+    color: white;
+    text-decoration: none;
+    border-radius: var(--border-radius-sm);
+    font-size: 12px;
+    transition: var(--transition);
+}
+
+.audio-download:hover {
+    background: var(--primary-hover);
+}
+
+.audio-missing {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px;
+    background: rgba(239, 68, 68, 0.1);
+    border-radius: var(--border-radius-sm);
+    color: var(--danger-color);
+    font-size: 13px;
+}
+
+/* 복사 버튼 */
+.copy-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 16px;
+}
+
+.copy-btn {
+    padding: 8px 16px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 13px;
+    transition: var(--transition);
+}
+
+.copy-btn:hover {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+    .summary-header {
+        flex-direction: column;
+        gap: 16px;
+    }
+    
+    .summary-meta h1 {
+        font-size: 18px;
+    }
+    
+    .summary-info {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .resultbox {
+        padding: 16px;
+    }
+    
+    .resultbox h1 {
+        font-size: 24px;
+    }
+    
+    .resultbox h2 {
+        font-size: 20px;
+    }
+    
+    .resultbox h3 {
+        font-size: 16px;
+    }
+}
