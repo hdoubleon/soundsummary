@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>강의 녹음 요약 AI</title>
+    <!-- CSS 파일 - 원래 스타일 유지 -->
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -83,6 +84,15 @@
             <h4>키보드 단축키</h4>
             <p><kbd>Ctrl/Cmd + N</kbd> 새 세션</p>
             <p><kbd>Ctrl/Cmd + R</kbd> 녹음 시작/중지</p>
+        </div>
+        
+        <!-- 테마 전환 버튼 -->
+        <div class="theme-toggle-section">
+            <button class="theme-toggle-btn" onclick="toggleTheme()" title="테마 전환">
+                <i class="fas fa-sun theme-icon-light"></i>
+                <i class="fas fa-moon theme-icon-dark"></i>
+                <span>테마 전환</span>
+            </button>
         </div>
         
         <!-- 오픈소스 정보 버튼 -->
@@ -257,7 +267,11 @@
         <div class="loading-overlay" id="loadingOverlay">
             <div class="loading-content">
                 <div class="spinner"></div>
-                <p>강의 내용 분석 중…</p>
+                <p id="loadingText">강의 내용 분석 중…</p>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill" id="progressBarFill"></div>
+                </div>
+                <p class="progress-text" id="progressText">0%</p>
             </div>
         </div>
 
@@ -291,7 +305,7 @@
         </div>
     </div>
 
-    <script src="api.js"></script>
+    <!-- JavaScript 파일들 -->
     <script src="script.js"></script>
 </body>
 </html>

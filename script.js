@@ -1,4 +1,4 @@
-// Version: 2.0.1 - Fixed savedFileNames scope issue
+// Version: 2.1.0 - Added theme toggle, progress bar, touch gestures
 // 전역 변수
 let mediaRecorder = null;
 let recordedChunks = [];
@@ -14,6 +14,12 @@ let openTabs = new Map(); // 열려있는 탭들
 let activeTabId = 'welcome';
 let tabCounter = 1;
 let isModalMinimized = false; // 모달 최소화 상태
+
+// 모바일 터치 제스처 변수
+let touchStartY = 0;
+let touchCurrentY = 0;
+let isSidebarDragging = false;
+let mobileSidebarOpen = false;
 
 // ========================================
 // 🚫 페이지 새로고침 완전 차단
@@ -72,6 +78,15 @@ document.addEventListener('DOMContentLoaded', function() {
     setupWorkspaceSelectListener();
     switchSidebarPanel('summaries');
     renderProjects();
+    
+    // 테마 로드
+    loadTheme();
+    
+    // 모바일 터치 제스처 초기화
+    initTouchGestures();
+    
+    // 모바일 햄버거 버튼 추가
+    addMobileSidebarToggle();
 });
 
 // 앱 초기화
@@ -3593,3 +3608,232 @@ window.deleteJobFromBackend = deleteJobFromBackend;
 window.cleanupFailedJobs = cleanupFailedJobs;
 window.syncJobsFromBackend = syncJobsFromBackend;
 window.cleanupAndSync = cleanupAndSync;
+
+// ============================================
+// 🎨 테마 전환 기능
+// ============================================
+
+function toggleTheme() {
+    const body = document.body;
+    const currentTheme = body.classList.contains('light-theme') ? 'light' : 'dark';
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    
+    if (newTheme === 'light') {
+        body.classList.add('light-theme');
+    } else {
+        body.classList.remove('light-theme');
+    }
+    
+    // localStorage에 저장
+    localStorage.setItem('vscode_lectureAI_theme', newTheme);
+    
+    // 애니메이션 효과
+    const btn = document.querySelector('.theme-toggle-btn');
+    if (btn) {
+        btn.style.transform = 'scale(0.9)';
+        setTimeout(() => {
+            btn.style.transform = 'scale(1)';
+        }, 150);
+    }
+    
+    showNotification('success', `${newTheme === 'light' ? '☀️ 라이트' : '🌙 다크'} 테마로 전환되었습니다.`);
+}
+
+function loadTheme() {
+    const savedTheme = localStorage.getItem('vscode_lectureAI_theme') || 'dark';
+    if (savedTheme === 'light') {
+        document.body.classList.add('light-theme');
+    }
+}
+
+// ============================================
+// 📊 프로그레스 바 기능
+// ============================================
+
+function updateProgressBar(percent, text) {
+    const progressFill = document.getElementById('progressBarFill');
+    const progressText = document.getElementById('progressText');
+    const loadingText = document.getElementById('loadingText');
+    
+    if (progressFill) {
+        progressFill.style.width = `${percent}%`;
+    }
+    
+    if (progressText) {
+        progressText.textContent = `${Math.round(percent)}%`;
+    }
+    
+    if (text && loadingText) {
+        loadingText.textContent = text;
+    }
+}
+
+function simulateProgress(duration = 10000) {
+    let progress = 0;
+    const steps = [
+        { percent: 20, text: '오디오 파일 업로드 중...' },
+        { percent: 40, text: '음성 인식 처리 중...' },
+        { percent: 60, text: '텍스트 변환 중...' },
+        { percent: 80, text: 'AI 요약 생성 중...' },
+        { percent: 95, text: '최종 처리 중...' }
+    ];
+    
+    let currentStep = 0;
+    const interval = duration / steps.length;
+    
+    const progressInterval = setInterval(() => {
+        if (currentStep < steps.length) {
+            const step = steps[currentStep];
+            updateProgressBar(step.percent, step.text);
+            currentStep++;
+        } else {
+            clearInterval(progressInterval);
+        }
+    }, interval);
+    
+    return progressInterval;
+}
+
+// 기존 showLoading 함수 개선
+const _originalShowLoading = typeof showLoading !== 'undefined' ? showLoading : null;
+
+function showLoading(show) {
+    const overlay = document.getElementById('loadingOverlay');
+    if (!overlay) return;
+    
+    if (show) {
+        overlay.classList.add('active');
+        updateProgressBar(0, '처리 시작 중...');
+        simulateProgress(10000);
+    } else {
+        updateProgressBar(100, '완료!');
+        setTimeout(() => {
+            overlay.classList.remove('active');
+        }, 500);
+    }
+}
+
+// ============================================
+// 📱 모바일 터치 제스처
+// ============================================
+
+function initTouchGestures() {
+    const sidebar = document.querySelector('.sidebar');
+    if (!sidebar) return;
+    
+    // 스와이프 인디케이터 추가
+    const indicator = document.createElement('div');
+    indicator.className = 'swipe-indicator';
+    sidebar.insertBefore(indicator, sidebar.firstChild);
+    
+    // 오버레이 추가
+    const overlay = document.createElement('div');
+    overlay.className = 'mobile-sidebar-overlay';
+    overlay.addEventListener('click', closeMobileSidebar);
+    document.body.appendChild(overlay);
+    
+    // 터치 이벤트
+    sidebar.addEventListener('touchstart', handleTouchStart, { passive: false });
+    sidebar.addEventListener('touchmove', handleTouchMove, { passive: false });
+    sidebar.addEventListener('touchend', handleTouchEnd, { passive: false });
+}
+
+function handleTouchStart(e) {
+    if (window.innerWidth > 768) return;
+    
+    const touch = e.touches[0];
+    touchStartY = touch.clientY;
+    touchCurrentY = touch.clientY;
+    isSidebarDragging = true;
+    
+    const sidebar = document.querySelector('.sidebar');
+    sidebar.classList.add('touch-dragging');
+}
+
+function handleTouchMove(e) {
+    if (!isSidebarDragging || window.innerWidth > 768) return;
+    
+    const touch = e.touches[0];
+    touchCurrentY = touch.clientY;
+    const deltaY = touchCurrentY - touchStartY;
+    
+    const sidebar = document.querySelector('.sidebar');
+    
+    // 아래로 드래그 (닫기)
+    if (deltaY > 0 && mobileSidebarOpen) {
+        e.preventDefault();
+        const translateY = Math.min(deltaY, window.innerHeight);
+        sidebar.style.transform = `translateY(${translateY}px)`;
+    }
+    
+    // 위로 드래그 (열기)
+    if (deltaY < 0 && !mobileSidebarOpen) {
+        e.preventDefault();
+        const translateY = Math.max(0, window.innerHeight + deltaY);
+        sidebar.style.transform = `translateY(${translateY}px)`;
+    }
+}
+
+function handleTouchEnd(e) {
+    if (!isSidebarDragging || window.innerWidth > 768) return;
+    
+    const deltaY = touchCurrentY - touchStartY;
+    const sidebar = document.querySelector('.sidebar');
+    
+    sidebar.classList.remove('touch-dragging');
+    sidebar.style.transform = '';
+    
+    // 일정 거리 이상 드래그하면 토글
+    if (Math.abs(deltaY) > 50) {
+        if (deltaY > 0 && mobileSidebarOpen) {
+            closeMobileSidebar();
+        } else if (deltaY < 0 && !mobileSidebarOpen) {
+            openMobileSidebar();
+        }
+    }
+    
+    isSidebarDragging = false;
+}
+
+function addMobileSidebarToggle() {
+    // 이미 있으면 생략
+    if (document.querySelector('.mobile-sidebar-toggle')) return;
+    
+    const btn = document.createElement('button');
+    btn.className = 'mobile-sidebar-toggle';
+    btn.innerHTML = '<i class="fas fa-bars"></i>';
+    btn.addEventListener('click', toggleMobileSidebar);
+    document.body.appendChild(btn);
+}
+
+function toggleMobileSidebar() {
+    if (mobileSidebarOpen) {
+        closeMobileSidebar();
+    } else {
+        openMobileSidebar();
+    }
+}
+
+function openMobileSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.querySelector('.mobile-sidebar-overlay');
+    const btn = document.querySelector('.mobile-sidebar-toggle');
+    
+    if (sidebar) sidebar.classList.add('mobile-open');
+    if (overlay) overlay.classList.add('active');
+    if (btn) btn.classList.add('active');
+    
+    mobileSidebarOpen = true;
+}
+
+function closeMobileSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.querySelector('.mobile-sidebar-overlay');
+    const btn = document.querySelector('.mobile-sidebar-toggle');
+    
+    if (sidebar) sidebar.classList.remove('mobile-open');
+    if (overlay) overlay.classList.remove('active');
+    if (btn) btn.classList.remove('active');
+    
+    mobileSidebarOpen = false;
+}
