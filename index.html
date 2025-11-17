@@ -86,6 +86,15 @@
             <p><kbd>Ctrl/Cmd + R</kbd> 녹음 시작/중지</p>
         </div>
         
+        <!-- 테마 전환 버튼 -->
+        <div class="theme-toggle-section">
+            <button class="theme-toggle-btn" onclick="toggleTheme()" title="테마 전환">
+                <i class="fas fa-sun theme-icon-light"></i>
+                <i class="fas fa-moon theme-icon-dark"></i>
+                <span>테마 전환</span>
+            </button>
+        </div>
+        
         <!-- 오픈소스 정보 버튼 -->
         <div class="opensource-info">
             <button class="opensource-btn" onclick="showOpenSourceInfo()" title="오픈소스 라이선스">
@@ -258,7 +267,11 @@
         <div class="loading-overlay" id="loadingOverlay">
             <div class="loading-content">
                 <div class="spinner"></div>
-                <p>강의 내용 분석 중…</p>
+                <p id="loadingText">강의 내용 분석 중…</p>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill" id="progressBarFill"></div>
+                </div>
+                <p class="progress-text" id="progressText">0%</p>
             </div>
         </div>
 
