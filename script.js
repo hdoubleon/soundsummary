@@ -3627,6 +3627,9 @@ function toggleTheme() {
     // localStorage에 저장
     localStorage.setItem('vscode_lectureAI_theme', newTheme);
     
+    // 버튼 텍스트 업데이트
+    updateThemeButton(newTheme);
+    
     // 애니메이션 효과
     const btn = document.querySelector('.theme-toggle-btn');
     if (btn) {
@@ -3639,11 +3642,26 @@ function toggleTheme() {
     showNotification('success', `${newTheme === 'light' ? '☀️ 라이트' : '🌙 다크'} 테마로 전환되었습니다.`);
 }
 
+function updateThemeButton(currentTheme) {
+    const btn = document.querySelector('.theme-toggle-btn');
+    const span = btn.querySelector('span');
+    
+    if (currentTheme === 'light') {
+        // 라이트 모드일 때 → 다크 모드 버튼 표시
+        span.textContent = '다크';
+    } else {
+        // 다크 모드일 때 → 라이트 모드 버튼 표시
+        span.textContent = '라이트';
+    }
+}
+
 function loadTheme() {
     const savedTheme = localStorage.getItem('vscode_lectureAI_theme') || 'dark';
     if (savedTheme === 'light') {
         document.body.classList.add('light-theme');
     }
+    // 페이지 로드 시 버튼 텍스트 업데이트
+    updateThemeButton(savedTheme);
 }
 
 // ============================================
