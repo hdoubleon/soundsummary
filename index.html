@@ -138,6 +138,14 @@
 
                 <!-- 최근 요약 미리보기 -->
                 <div class="recent-summaries-preview">
+                    <!-- 검색 기능 추가 -->
+                    <div class="search-section" style="margin-bottom: 16px;">
+                        <input type="text" id="summarySearchInput" placeholder="요약 제목 또는 내용 검색" style="padding: 8px; width: 220px;">
+                        <button onclick="searchSummaries()" style="padding: 8px 12px; margin-left: 4px;">
+                            <i class="fas fa-search"></i> 검색
+                        </button>
+                    </div>
+                    <div class="search-results" id="searchResults" style="margin-bottom: 16px; display: none;"></div>
                     <h2>최근 요약</h2>
                     <div class="recent-items" id="recentItems">
                         <!-- 최근 요약들이 여기에 표시됩니다 -->

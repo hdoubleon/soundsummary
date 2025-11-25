@@ -87,6 +87,14 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 모바일 햄버거 버튼 추가
     addMobileSidebarToggle();
+
+    // 검색 입력창 엔터키 이벤트
+    const searchInput = document.getElementById('summarySearchInput');
+    if (searchInput) {
+        searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') searchSummaries();
+        });
+    }
 });
 
 // 앱 초기화
@@ -94,6 +102,54 @@ function initializeApp() {
     checkMicrophonePermission();
     setupEventListeners();
     updateSummariesList();
+    // 검색 결과 초기화
+    const searchResults = document.getElementById('searchResults');
+    if (searchResults) searchResults.style.display = 'none';
+}
+// 검색 기능: 최근 요약에서 제목/내용으로 검색
+function searchSummaries() {
+    const input = document.getElementById('summarySearchInput');
+    const query = input ? input.value.trim().toLowerCase() : '';
+    const resultsBox = document.getElementById('searchResults');
+    if (!query) {
+        if (resultsBox) {
+            resultsBox.style.display = 'none';
+            resultsBox.innerHTML = '';
+        }
+        return;
+    }
+
+    // sessionHistory에 저장된 요약들에서 검색
+    const results = sessionHistory.filter(item => {
+        const title = (item.title || '').toLowerCase();
+        const content = (item.content || '').toLowerCase();
+        return title.includes(query) || content.includes(query);
+    });
+
+    renderSearchResults(results);
+}
+
+function renderSearchResults(results) {
+    const resultsBox = document.getElementById('searchResults');
+    if (!resultsBox) return;
+    resultsBox.innerHTML = '';
+    if (results.length === 0) {
+        resultsBox.innerHTML = '<div style="color:#999; padding:8px;">검색 결과가 없습니다.</div>';
+    } else {
+        results.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'search-result-item';
+            div.style.padding = '8px 0';
+            div.style.borderBottom = '1px solid #eee';
+            div.style.cursor = 'pointer';
+            div.innerHTML = `<strong>${item.title}</strong><br><span style='color:#666;'>${item.timestamp || ''}</span>`;
+            div.onclick = function() {
+                createSummaryTab(item);
+            };
+            resultsBox.appendChild(div);
+        });
+    }
+    resultsBox.style.display = 'block';
 }
 
 // 탭 시스템 초기화
