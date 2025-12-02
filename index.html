@@ -221,6 +221,17 @@
                             <i class="fas fa-folder-tree"></i>
                             <span>저장 위치 선택</span>
                         </div>
+
+                        <div class="folder-root-row">
+                            <div class="folder-root-info">
+                                <i class="fas fa-folder-open"></i>
+                                <span id="rootFolderStatus">선택된 폴더 없음</span>
+                            </div>
+                            <button type="button" class="folder-open-btn" onclick="openLocalFolderFromModal(event)">
+                                <i class="fas fa-folder-open"></i>
+                                <span>로컬 폴더 선택</span>
+                            </button>
+                        </div>
                         
                         <!-- Workspace 선택 -->
                         <div class="folder-input-group">
