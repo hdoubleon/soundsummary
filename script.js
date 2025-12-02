@@ -1507,10 +1507,34 @@ let currentContextHandle = null;  // 우클릭한 폴더/파일 핸들
 let currentContextParentHandle = null;  // 우클릭한 항목의 부모 핸들
 let currentContextLevel = null;  // 현재 컨텍스트의 레벨 (1: workspace, 2: subject)
 
+// 현재 선택한 루트 폴더 상태를 모달에 표시
+function updateRootFolderStatus(folderName = null) {
+    const statusEl = document.getElementById('rootFolderStatus');
+    if (!statusEl) return;
+
+    if (folderName) {
+        statusEl.textContent = `${folderName} 폴더 선택됨`;
+        statusEl.classList.add('active');
+    } else {
+        statusEl.textContent = '선택된 폴더 없음';
+        statusEl.classList.remove('active');
+    }
+}
+
+// 모달에서 직접 폴더 열기
+async function openLocalFolderFromModal(event) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    await openLocalFolder('modal');
+}
+
 // 모달에서 workspace 폴더 목록 로드
 async function loadWorkspaceFolders(keepSelection = null) {
     const workspaceSelect = document.getElementById('workspaceSelect');
     const subjectInput = document.getElementById('subjectInput');
+    updateRootFolderStatus(rootDirHandle ? rootDirHandle.name : null);
     
     if (!workspaceSelect) return;
     
@@ -1526,6 +1550,7 @@ async function loadWorkspaceFolders(keepSelection = null) {
     if (!rootDirHandle) {
         // 폴더가 열리지 않았어도 경고만 하고 계속 진행 (새로 만들 수 있음)
         console.log('로컬 디렉토리가 열리지 않았습니다. Workspace를 새로 생성할 수 있습니다.');
+        disableSummarizeButton();
         return;
     }
     
@@ -1567,6 +1592,16 @@ async function onWorkspaceChange() {
     
     const workspaceName = workspaceSelect.value;
     
+    if (workspaceName && !rootDirHandle) {
+        showNotification('error', '먼저 로컬 폴더를 선택해주세요.');
+        workspaceSelect.value = '';
+        subjectInput.disabled = true;
+        selectedWorkspaceHandle = null;
+        selectedWorkspacePath = null;
+        disableSummarizeButton();
+        return;
+    }
+
     if (workspaceName) {
         // 폴더 핸들 가져오기 (실패해도 계속 진행)
         if (rootDirHandle) {
@@ -1617,43 +1652,36 @@ async function createNewWorkspace(event) {
         return;
     }
     
+    if (!rootDirHandle) {
+        showNotification('error', '요약을 저장할 로컬 폴더를 먼저 선택해주세요.');
+        return;
+    }
+
     // 유효성 검사
     if (!/^[a-zA-Z0-9가-힣_\-\s]+$/.test(workspaceName)) {
         showNotification('error', 'Workspace 이름에는 특수문자를 사용할 수 없습니다.');
         return;
     }
     
-    // 로컬 폴더가 열리지 않았어도 이름만 추가 (백엔드에서 관리)
     const workspaceSelect = document.getElementById('workspaceSelect');
     
-    if (rootDirHandle) {
-        try {
-            console.log('📁 Workspace 폴더 생성 중...');
-            // summary 폴더 안에 workspace 생성
-            await rootDirHandle.getDirectoryHandle(workspaceName, { create: true });
-            showNotification('success', `Workspace '${workspaceName}'가 생성되었습니다.`);
-            
-            console.log('🔄 loadWorkspaceFolders 호출 전');
-            // 목록 새로고침 (새로 만든 workspace 유지)
-            await loadWorkspaceFolders(workspaceName);
-            console.log('✅ loadWorkspaceFolders 완료');
-            
-            // 디렉토리 트리도 새로고침
-            console.log('🔄 renderLocalDirectory 호출');
-            await renderLocalDirectory();
-            console.log('✅ renderLocalDirectory 완료');
-        } catch (error) {
-            console.error('Workspace 폴더 생성 실패 (계속 진행):', error);
-        }
-    } else {
-        console.log('📝 로컬 폴더 없음 - 드롭다운만 업데이트');
-        // 폴더 없어도 드롭다운에 추가
-        const option = document.createElement('option');
-        option.value = workspaceName;
-        option.textContent = workspaceName;
-        workspaceSelect.appendChild(option);
-        workspaceSelect.value = workspaceName;
-        showNotification('info', `Workspace '${workspaceName}' 추가됨 (로컬 폴더 없음)`);
+    try {
+        console.log('📁 Workspace 폴더 생성 중...');
+        // summary 폴더 안에 workspace 생성
+        await rootDirHandle.getDirectoryHandle(workspaceName, { create: true });
+        showNotification('success', `Workspace '${workspaceName}'가 생성되었습니다.`);
+        
+        console.log('🔄 loadWorkspaceFolders 호출 전');
+        // 목록 새로고침 (새로 만든 workspace 유지)
+        await loadWorkspaceFolders(workspaceName);
+        console.log('✅ loadWorkspaceFolders 완료');
+        
+        // 디렉토리 트리도 새로고침
+        console.log('🔄 renderLocalDirectory 호출');
+        await renderLocalDirectory();
+        console.log('✅ renderLocalDirectory 완료');
+    } catch (error) {
+        console.error('Workspace 폴더 생성 실패 (계속 진행):', error);
     }
     
     console.log('✅ createNewWorkspace 완료!');
@@ -1663,10 +1691,11 @@ async function createNewWorkspace(event) {
 function checkSummarizeButtonState() {
     const subjectInput = document.getElementById('subjectInput');
     const hasFiles = selectedFiles.length > 0 || currentAudioFile !== null;
+    const hasRootFolder = !!rootDirHandle;
     const hasWorkspace = selectedWorkspacePath !== null;
     const hasSubject = subjectInput && subjectInput.value.trim() !== '';
     
-    if (hasFiles && hasWorkspace && hasSubject) {
+    if (hasFiles && hasRootFolder && hasWorkspace && hasSubject) {
         enableSummarizeButton();
     } else {
         disableSummarizeButton();
@@ -1705,7 +1734,15 @@ function isFileSystemAccessSupported() {
 }
 
 // 폴더 열기
-async function openLocalFolder() {
+async function openLocalFolder(source = 'sidebar') {
+    if (source && source.preventDefault) {
+        source.preventDefault();
+        source.stopPropagation();
+        source = 'sidebar';
+    }
+
+    const triggeredFromModal = source === 'modal';
+
     if (!isFileSystemAccessSupported()) {
         showNotification('error', '이 브라우저는 폴더 접근을 지원하지 않습니다. Chrome이나 Edge를 사용해주세요.');
         return;
@@ -1722,6 +1759,13 @@ async function openLocalFolder() {
 
         // 폴더 구조 표시
         await renderLocalDirectory();
+        updateRootFolderStatus(rootDirHandle?.name);
+        await loadWorkspaceFolders();
+        checkSummarizeButtonState();
+
+        if (triggeredFromModal) {
+            switchSidebarPanel('directories');
+        }
         
         showNotification('success', `${rootDirHandle.name} 폴더가 열렸습니다.`);
     } catch (error) {
@@ -2288,14 +2332,22 @@ async function loadDirectoryHandle() {
             if (permission === 'granted') {
                 rootDirHandle = data.handle;
                 await renderLocalDirectory();
+                updateRootFolderStatus(rootDirHandle?.name);
+                await loadWorkspaceFolders();
+                checkSummarizeButtonState();
             } else {
                 // 권한 재요청
                 const newPermission = await data.handle.requestPermission({ mode: 'readwrite' });
                 if (newPermission === 'granted') {
                     rootDirHandle = data.handle;
                     await renderLocalDirectory();
+                    updateRootFolderStatus(rootDirHandle?.name);
+                    await loadWorkspaceFolders();
+                    checkSummarizeButtonState();
                 }
             }
+        } else {
+            updateRootFolderStatus(null);
         }
     } catch (error) {
         console.error('폴더 핸들 불러오기 실패:', error);
