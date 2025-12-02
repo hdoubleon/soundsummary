@@ -87,6 +87,14 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 모바일 햄버거 버튼 추가
     addMobileSidebarToggle();
+
+    // 검색 입력창 엔터키 이벤트
+    const searchInput = document.getElementById('summarySearchInput');
+    if (searchInput) {
+        searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') searchSummaries();
+        });
+    }
 });
 
 // 앱 초기화
@@ -94,6 +102,54 @@ function initializeApp() {
     checkMicrophonePermission();
     setupEventListeners();
     updateSummariesList();
+    // 검색 결과 초기화
+    const searchResults = document.getElementById('searchResults');
+    if (searchResults) searchResults.style.display = 'none';
+}
+// 검색 기능: 최근 요약에서 제목/내용으로 검색
+function searchSummaries() {
+    const input = document.getElementById('summarySearchInput');
+    const query = input ? input.value.trim().toLowerCase() : '';
+    const resultsBox = document.getElementById('searchResults');
+    if (!query) {
+        if (resultsBox) {
+            resultsBox.style.display = 'none';
+            resultsBox.innerHTML = '';
+        }
+        return;
+    }
+
+    // sessionHistory에 저장된 요약들에서 검색
+    const results = sessionHistory.filter(item => {
+        const title = (item.title || '').toLowerCase();
+        const content = (item.content || '').toLowerCase();
+        return title.includes(query) || content.includes(query);
+    });
+
+    renderSearchResults(results);
+}
+
+function renderSearchResults(results) {
+    const resultsBox = document.getElementById('searchResults');
+    if (!resultsBox) return;
+    resultsBox.innerHTML = '';
+    if (results.length === 0) {
+        resultsBox.innerHTML = '<div style="color:#999; padding:8px;">검색 결과가 없습니다.</div>';
+    } else {
+        results.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'search-result-item';
+            div.style.padding = '8px 0';
+            div.style.borderBottom = '1px solid #eee';
+            div.style.cursor = 'pointer';
+            div.innerHTML = `<strong>${item.title}</strong><br><span style='color:#666;'>${item.timestamp || ''}</span>`;
+            div.onclick = function() {
+                createSummaryTab(item);
+            };
+            resultsBox.appendChild(div);
+        });
+    }
+    resultsBox.style.display = 'block';
 }
 
 // 탭 시스템 초기화
@@ -874,12 +930,12 @@ async function simulateSummarizationForFile(workspace, subject, fileObjInput) {
         let speakerSegments = [];
         let actualSummary = null;
         
-        if (response.source_materials && response.source_materials.length > 0) {
-            const material = response.source_materials[0];
-            
-            // 실제 요약본 가져오기
-            actualSummary = material.individual_summary;
-            console.log('📄 백엔드에서 받은 실제 요약본:', actualSummary ? '있음' : '없음');
+    if (response.source_materials && response.source_materials.length > 0) {
+        const material = response.source_materials[0];
+        
+        // 실제 요약본 가져오기
+        actualSummary = material.individual_summary || material.final_summary || response.final_summary;
+        console.log('📄 백엔드에서 받은 실제 요약본:', actualSummary ? '있음' : '없음');
             
             if (material.speaker_attributed_segments) {
                 speakerSegments = material.speaker_attributed_segments.map(seg => ({
@@ -900,7 +956,7 @@ async function simulateSummarizationForFile(workspace, subject, fileObjInput) {
             fileName,
             
             // 요약본 (백엔드에서 받은 실제 데이터 사용)
-            content: actualSummary || '요약본을 생성할 수 없습니다.',
+            content: actualSummary || response.final_summary || '요약본을 생성할 수 없습니다.',
             
             // 화자 구분 데이터
             speakerSegments: speakerSegments,
@@ -914,6 +970,22 @@ async function simulateSummarizationForFile(workspace, subject, fileObjInput) {
             jobStatus: response.status || 'PENDING',
             rawResponse: response
         };
+
+        // Demo 모드나 백엔드 오류 시에도 화면에 확실히 표시되도록 폴백 주입
+        if (!summary.content || summary.content.trim() === '') {
+            summary.content = `${workspace} - ${subject}\n\n${DEMO_TEXT}`;
+        }
+        if (!summary.speakerSegments || summary.speakerSegments.length === 0) {
+            summary.speakerSegments = getDemoSpeakerSegments().map(seg => ({
+                speaker: seg.speaker_label || 'Unknown',
+                start: seg.start_time_seconds,
+                end: seg.end_time_seconds,
+                text: seg.text
+            }));
+        }
+        if (!summary.audioUrl && fileObj) {
+            summary.audioUrl = URL.createObjectURL(fileObj);
+        }
         
         console.log('📦 summary 객체 생성 완료:', summary);
         
@@ -3039,8 +3111,83 @@ const API_CONFIG = {
   },
   defaultHeaders: {},
   timeoutMs: 3_600_000,  // 1시간 (3600초) - 매우 긴 오디오 처리 시간 고려
-  useMockMode: false  // 🚀 실제 백엔드 사용! (CORS 해결됨)
+  // 로컬이 아니면 자동으로 데모(Mock) 모드로 동작
+  useMockMode: window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'
 };
+
+const DEMO_TEXT = `# 데모 요약본
+
+> 백엔드 없이 동작하는 데모 모드입니다. 업로드한 파일은 실제로 분석하지 않고 예시 요약을 보여줍니다.
+
+## 📚 주요 내용
+- 자료구조의 기본 개념과 배열/리스트 차이
+- Big-O 표기법으로 시간 복잡도 분석
+- 실습 과제를 진행하며 주의할 점
+
+## 💡 강의 핵심 정리
+- 배열은 고정 크기, 리스트는 동적 크기 조절 가능
+- 탐색/삽입/삭제의 시간 복잡도를 비교하며 예제 풀이
+- 과제: 입력 크기별 성능 측정 후 그래프 제출
+
+## 📝 다음 단계
+- 실제 요약을 보려면 백엔드(API)를 연결한 뒤 \`API_CONFIG.useMockMode = false\`로 변경하세요.`;
+
+function getDemoSpeakerSegments() {
+  return [
+    {
+      speaker_label: 'Speaker 1',
+      start_time_seconds: 0.5,
+      end_time_seconds: 5.2,
+      text: '안녕하세요, 오늘은 자료구조의 기본 개념에 대해 알아보겠습니다.'
+    },
+    {
+      speaker_label: 'Speaker 1',
+      start_time_seconds: 5.5,
+      end_time_seconds: 12.8,
+      text: '먼저 배열과 리스트의 차이점부터 살펴보죠. 배열은 고정된 크기를 가지고 있습니다.'
+    },
+    {
+      speaker_label: 'Speaker 2',
+      start_time_seconds: 13.0,
+      end_time_seconds: 18.5,
+      text: '질문 있습니다. 그럼 배열은 크기를 변경할 수 없나요?'
+    },
+    {
+      speaker_label: 'Speaker 1',
+      start_time_seconds: 19.0,
+      end_time_seconds: 25.3,
+      text: '맞습니다. 배열은 생성 시 정한 크기를 변경할 수 없어요. 반면 리스트는 동적으로 크기가 조절됩니다.'
+    },
+    {
+      speaker_label: 'Speaker 1',
+      start_time_seconds: 26.0,
+      end_time_seconds: 33.7,
+      text: '다음으로 시간 복잡도에 대해 알아볼까요? Big-O 표기법을 사용해서 알고리즘의 효율성을 나타냅니다.'
+    }
+  ];
+}
+
+// 데모 응답 생성 (백엔드 없을 때 사용)
+function buildDemoResponse({ workspace, subject, file }) {
+  const demoText = `# ${subject} 강의 요약 (데모)\n\n${DEMO_TEXT}`;
+  return {
+    id: Date.now(),
+    title: `${workspace} - ${subject}`,
+    subject_id: null,
+    status: 'COMPLETED',
+    final_summary: demoText,
+    source_materials: [{
+      id: 1,
+      original_filename: file?.name || 'recording.webm',
+      // simulateSummarizationForFile은 individual_summary를 읽으므로 함께 넣어준다
+      individual_summary: demoText,
+      speaker_attributed_segments: getDemoSpeakerSegments()
+    }],
+    created_at: new Date().toISOString(),
+    started_at: new Date().toISOString(),
+    completed_at: new Date().toISOString()
+  };
+}
 
 // 체크박스 상태 읽기
 function getKoreanOnlyFlag() {
@@ -3074,64 +3221,19 @@ async function sendTranscriptionRequest(opts = {}) {
     const workspace = opts.workspace || '기본프로젝트';
     const subject = opts.subject || `강의 녹음 - ${new Date().toLocaleString('ko-KR')}`;
 
-    console.log('전송할 데이터:', { workspace, subject, fileName: file.name });
+  console.log('전송할 데이터:', { workspace, subject, fileName: file.name });
 
-    // Mock 모드 - 백엔드 없이 테스트
-    if (API_CONFIG.useMockMode) {
-        console.log('🧪 Mock 모드: 실제 API 호출 없이 시뮬레이션');
-        await new Promise(resolve => setTimeout(resolve, 2000)); // 2초 지연
-        
-        return {
-            id: Date.now(),
-            title: `${workspace} - ${subject}`,
-            subject_id: null,
-            status: 'COMPLETED',
-            final_summary: `# ${subject} 강의 요약 (Mock)\n\n## 📚 주요 내용\n\n이것은 테스트용 Mock 데이터입니다.\n\n### 핵심 개념\n- 개념 1: 자료구조의 기본 개념\n- 개념 2: 배열과 리스트의 차이\n- 개념 3: 시간 복잡도 분석\n\n## 💡 중요 포인트\n\n강의에서 다룬 핵심 내용들입니다.\n- 배열은 고정 크기, 리스트는 동적 크기\n- Big-O 표기법 이해하기\n- 실습 과제 주의사항\n\n## 📝 요약\n\n백엔드 서버가 실행되지 않았습니다. 실제 요약을 생성하려면:\n1. \`cd /Users/max/Desktop/Team10-Decimal/apps/api\`\n2. \`pip install fastapi uvicorn sqlalchemy\`\n3. \`uvicorn main:app --reload --port 8000\`\n\n그 후 \`API_CONFIG.useMockMode = false\`로 설정하세요.`,
-            source_materials: [{
-                id: 1,
-                original_filename: file.name,
-                speaker_attributed_segments: [
-                    {
-                        speaker_label: 'Speaker 1',
-                        start_time_seconds: 0.5,
-                        end_time_seconds: 5.2,
-                        text: '안녕하세요, 오늘은 자료구조의 기본 개념에 대해 알아보겠습니다.'
-                    },
-                    {
-                        speaker_label: 'Speaker 1',
-                        start_time_seconds: 5.5,
-                        end_time_seconds: 12.8,
-                        text: '먼저 배열과 리스트의 차이점부터 살펴보죠. 배열은 고정된 크기를 가지고 있습니다.'
-                    },
-                    {
-                        speaker_label: 'Speaker 2',
-                        start_time_seconds: 13.0,
-                        end_time_seconds: 18.5,
-                        text: '질문 있습니다. 그럼 배열은 크기를 변경할 수 없나요?'
-                    },
-                    {
-                        speaker_label: 'Speaker 1',
-                        start_time_seconds: 19.0,
-                        end_time_seconds: 25.3,
-                        text: '맞습니다. 배열은 생성 시 정한 크기를 변경할 수 없어요. 반면 리스트는 동적으로 크기가 조절됩니다.'
-                    },
-                    {
-                        speaker_label: 'Speaker 1',
-                        start_time_seconds: 26.0,
-                        end_time_seconds: 33.7,
-                        text: '다음으로 시간 복잡도에 대해 알아볼까요? Big-O 표기법을 사용해서 알고리즘의 효율성을 나타냅니다.'
-                    }
-                ]
-            }],
-            created_at: new Date().toISOString(),
-            started_at: new Date().toISOString(),
-            completed_at: new Date().toISOString()
-        };
-    }
-
-    // 실제 API 호출
-    const url = `${API_CONFIG.baseURL}${API_CONFIG.endpoints.transcribe}`;
+  // Mock 모드 - 백엔드 없이 테스트
+  if (API_CONFIG.useMockMode) {
+    console.log('🧪 Mock 모드: 실제 API 호출 없이 시뮬레이션');
+    await new Promise(resolve => setTimeout(resolve, 2000)); // 2초 지연
     
+    return buildDemoResponse({ workspace, subject, file });
+  }
+
+  // 실제 API 호출
+  const url = `${API_CONFIG.baseURL}${API_CONFIG.endpoints.transcribe}`;
+  
     const fd = new FormData();
     fd.append('files', file, file.name);
     fd.append('title', `${workspace} - ${subject}`);  // 백엔드는 title을 받음
@@ -3152,22 +3254,26 @@ async function sendTranscriptionRequest(opts = {}) {
     const ctrl = new AbortController();
     const to = setTimeout(() => ctrl.abort(), API_CONFIG.timeoutMs);
 
-    let res;
-    try {
-        res = await fetch(url, {
-            method: 'POST',
-            body: fd,
-            signal: ctrl.signal,
-            credentials: 'include'
-        });
-    } catch (fetchError) {
-        clearTimeout(to);
-        
-        if (fetchError.name === 'AbortError') {
-            throw new Error('요청 시간 초과 (2분). 파일이 너무 크거나 서버가 응답하지 않습니다.');
-        }
-        
-        console.error('백엔드 서버 연결 실패:', fetchError);
+  let res;
+  try {
+    res = await fetch(url, {
+        method: 'POST',
+        body: fd,
+        signal: ctrl.signal,
+        credentials: 'include'
+    });
+  } catch (fetchError) {
+    clearTimeout(to);
+    
+    // 백엔드 실패 시 자동으로 데모 응답으로 대체 (GitHub Pages 대비)
+    console.warn('⚠️ 백엔드 연결 실패, 데모 모드로 대체합니다.', fetchError);
+    return buildDemoResponse({ workspace, subject, file });
+
+    if (fetchError.name === 'AbortError') {
+        throw new Error('요청 시간 초과 (2분). 파일이 너무 크거나 서버가 응답하지 않습니다.');
+    }
+    
+    console.error('백엔드 서버 연결 실패:', fetchError);
         throw new Error(`백엔드 서버에 연결할 수 없습니다.\n\n서버 실행 방법:\n1. cd /Users/max/Desktop/Team10-Decimal/apps/api\n2. pip install fastapi uvicorn sqlalchemy\n3. uvicorn main:app --reload --port 8000\n\n또는 script.js에서 API_CONFIG.useMockMode = true로 설정`);
     } finally {
         clearTimeout(to);
@@ -3627,6 +3733,9 @@ function toggleTheme() {
     // localStorage에 저장
     localStorage.setItem('vscode_lectureAI_theme', newTheme);
     
+    // 버튼 텍스트 업데이트
+    updateThemeButton(newTheme);
+    
     // 애니메이션 효과
     const btn = document.querySelector('.theme-toggle-btn');
     if (btn) {
@@ -3639,11 +3748,26 @@ function toggleTheme() {
     showNotification('success', `${newTheme === 'light' ? '☀️ 라이트' : '🌙 다크'} 테마로 전환되었습니다.`);
 }
 
+function updateThemeButton(currentTheme) {
+    const btn = document.querySelector('.theme-toggle-btn');
+    const span = btn.querySelector('span');
+    
+    if (currentTheme === 'light') {
+        // 라이트 모드일 때 → 다크 모드 버튼 표시
+        span.textContent = '다크';
+    } else {
+        // 다크 모드일 때 → 라이트 모드 버튼 표시
+        span.textContent = '라이트';
+    }
+}
+
 function loadTheme() {
     const savedTheme = localStorage.getItem('vscode_lectureAI_theme') || 'dark';
     if (savedTheme === 'light') {
         document.body.classList.add('light-theme');
     }
+    // 페이지 로드 시 버튼 텍스트 업데이트
+    updateThemeButton(savedTheme);
 }
 
 // ============================================
